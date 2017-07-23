@@ -18,6 +18,8 @@ LNX_Code : LNX_InstrumentTemplate {
 	var <system, <user, <userList, <systemIndices; // a temp moveMVC_
 	var <valid=false; // used to validate correct synthDef
 	var <active=false; // is the instrument active in a co-op
+	var <mono=false; // used for non self-freeing synths
+	var <node=nil; // used for non self-freeing synths
 	var <sequencer, <voicer;
 	var <userModels, <userViews, <systemViews, <userModelsBySymbol;
 	var <selectedView, <selectedIndex, <selectedBounds, <selectedType;
@@ -438,10 +440,25 @@ LNX_Code : LNX_InstrumentTemplate {
 		var voicerNode;
 		if (valid) {  // this is test to see if synthDef is valid
 			if (instOnSolo.onOff==0) {^nil}; // drop out if instrument onSolo is off
-			voicerNode = voicer.noteOn(note, velocity, latency +! syncDelay); // create a voicer node
-			server.sendBundle(latency +! syncDelay,
-				[\s_new, synthDef.name, voicerNode.node, 0, scCodeGroupID]++
-					(this.getSystemMsg(note,velocity))++(this.getUserMsg));
+			if (mono) {
+				if (node.isNil) {
+					node = server.nextNodeID; node.postln;
+					server.sendBundle(latency +! syncDelay,
+						[\s_new, synthDef.name, node, 0, scCodeGroupID]++
+						(this.getSystemMsg(note,velocity))++[\t_trig,1]++(this.getUserMsg));
+				} {
+				"playing: " .post; node.postln;
+				server.sendBundle(latency +! syncDelay,
+					[\n_set, node, 0, scCodeGroupID]++
+					     (this.getSystemMsg(note,velocity))++[\t_trig,1]++(this.getUserMsg));
+				};
+			} {
+				voicerNode = voicer.noteOn(note, velocity, latency +! syncDelay);//create a voicerNode
+				server.sendBundle(latency +! syncDelay,
+					[\s_new, synthDef.name, voicerNode.node, 0, scCodeGroupID]++
+					     (this.getSystemMsg(note,velocity))++[\gate,1]++(this.getUserMsg));
+
+			};
 		};
 	}
 	
@@ -1041,8 +1058,9 @@ LNX_Code : LNX_InstrumentTemplate {
 		
 		// test if it can be released
 		if (synthDef.canReleaseSynth.not) {
-			this.warnNoRelease;
-			failed=true;
+			//this.warnNoRelease;
+			//failed=true;
+			mono = true;
 		};
 		
 		// test for compulsory arguments before proceeding
