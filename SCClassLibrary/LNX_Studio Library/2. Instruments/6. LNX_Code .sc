@@ -295,7 +295,7 @@ LNX_Code : LNX_InstrumentTemplate {
 
 		// list all parameters you want exluded from a preset change
 		presetExclusion=[0,1,13,23];
-		randomExclusion=[0,1,2,3,7,8,13,9,11,14,16,17,23];
+		randomExclusion=[0,1,2,3,4,7,8,13,9,10,11,14,16,17,23];
 		autoExclusion=[23];
 		
 		// unique id for this instrument to use in SynthDef name
